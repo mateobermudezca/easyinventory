@@ -102,8 +102,37 @@ async function postToGoogleScript<T>(payload: Record<string, unknown>): Promise<
 
 /**
  * Prueba de conectividad con la hoja de Google Sheets.
+ * Utiliza GET con redirección automática para máxima compatibilidad con Google Apps Script.
  */
 export async function pingGoogleSheets(): Promise<ApiResponse> {
+  const url = getApiUrl();
+  if (!url) {
+    throw new Error('No se ha configurado la URL de Google Apps Script.');
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      const jsonText = await res.text();
+      try {
+        const data = JSON.parse(jsonText);
+        if (data && data.success) return data;
+      } catch {
+        // En caso de que devuelva texto
+      }
+    }
+  } catch (err) {
+    console.warn('Ping GET tuvo un inconveniente, probando POST...', err);
+  }
+
+  // Fallback con POST
   return postToGoogleScript({ action: 'ping' });
 }
 

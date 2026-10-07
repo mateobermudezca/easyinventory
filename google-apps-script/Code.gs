@@ -25,11 +25,39 @@ const BASE_HEADERS = [
 ];
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    success: true,
-    message: "Easy Inventory API activa y lista",
-    timestamp: new Date().toISOString()
-  })).setMimeType(ContentService.MimeType.JSON);
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    initHeaders(sheet);
+    return jsonResponse({
+      success: true,
+      message: "Easy Inventory API activa y lista en Google Sheets",
+      sheetName: sheet.getName(),
+      totalRows: Math.max(0, sheet.getLastRow() - 1),
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return jsonResponse({
+      success: false,
+      message: "Error al acceder a la hoja: " + err.toString()
+    });
+  }
+}
+
+/**
+ * Función de prueba para ejecutar con el botón ▶ "Ejecutar" en el editor.
+ * Útil para activar los permisos iniciales de Google en 1 clic.
+ */
+function testManualAddRow() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  initHeaders(sheet);
+  sheet.appendRow([
+    "Silla de Prueba (Test)",
+    "SN-0001",
+    "REF-TEST",
+    "Teo Muller",
+    Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT-5", "yyyy-MM-dd HH:mm:ss")
+  ]);
+  Logger.log("¡Prueba exitosa! Se agregó una fila en: " + sheet.getName());
 }
 
 function doPost(e) {
